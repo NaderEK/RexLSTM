@@ -19,7 +19,7 @@ def parse_args():
     parser.add_argument('--data_path', type=str, default='/home/data')
     parser.add_argument('--data_name', type=str, default='rain100L', choices=['rain100L', 'rain100H'])
     parser.add_argument('--save_path', type=str, default='result')
-    parser.add_argument('--num_blocks', nargs='+', type=int, default=[4, 6, 6, 8],
+    parser.add_argument('--num_blocks', nargs='+', type=int, default=[2, 3, 3, 4],
                         help='number of transformer blocks for each level')
     parser.add_argument('--num_heads', nargs='+', type=int, default=[1, 2, 4, 8],
                         help='number of attention heads for each level')
