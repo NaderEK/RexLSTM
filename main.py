@@ -9,7 +9,7 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from model import Restormer
+from model import RexLSTM
 from utils import parse_args, RainDataset, rgb_to_y, psnr, ssim
 
 
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=args.workers)
 
     results, best_psnr, best_ssim = {'PSNR': [], 'SSIM': []}, 0.0, 0.0
-    model = Restormer(args.num_blocks, args.num_heads, args.channels, args.num_refinement, args.expansion_factor).cuda()
+    model = RexLSTM(args.num_blocks, args.channels, args.num_refinement, conv_type="causal1d").cuda()
     if args.model_file:
         model.load_state_dict(torch.load(args.model_file))
         save_loop(model, test_loader, 1)
