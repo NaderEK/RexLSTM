@@ -16,10 +16,10 @@ from torchvision.transforms import RandomCrop
 def parse_args():
     desc = 'Pytorch Implementation of \'Restormer: Efficient Transformer for High-Resolution Image Restoration\''
     parser = argparse.ArgumentParser(description=desc)
-    parser.add_argument('--data_path', type=str, default='/home/data')
+    parser.add_argument('--data_path', type=str, default='./')
     parser.add_argument('--data_name', type=str, default='rain100L', choices=['rain100L', 'rain100H'])
     parser.add_argument('--save_path', type=str, default='result')
-    parser.add_argument('--num_blocks', nargs='+', type=int, default=[2, 3, 3, 4],
+    parser.add_argument('--num_blocks', nargs='+', type=int, default=[4, 6, 6, 8],
                         help='number of transformer blocks for each level')
     parser.add_argument('--num_heads', nargs='+', type=int, default=[1, 2, 4, 8],
                         help='number of attention heads for each level')
@@ -27,13 +27,13 @@ def parse_args():
                         help='number of channels for each level')
     parser.add_argument('--expansion_factor', type=float, default=2.66, help='factor of channel expansion for GDFN')
     parser.add_argument('--num_refinement', type=int, default=4, help='number of channels for refinement stage')
-    parser.add_argument('--num_iter', type=int, default=300000, help='iterations of training')
-    parser.add_argument('--batch_size', nargs='+', type=int, default=[64, 40, 32, 16, 8, 8],
+    parser.add_argument('--num_iter', type=int, default=30000, help='iterations of training')
+    parser.add_argument('--batch_size', nargs='+', type=int, default=[16, 10, 8, 4, 2, 2],
                         help='batch size of loading images for progressive learning')
-    parser.add_argument('--patch_size', nargs='+', type=int, default=[128, 160, 192, 256, 320, 384],
+    parser.add_argument('--patch_size', nargs='+', type=int, default=[64, 80, 96, 128, 160, 192],
                         help='patch size of each image for progressive learning')
     parser.add_argument('--lr', type=float, default=0.0003, help='initial learning rate')
-    parser.add_argument('--milestone', nargs='+', type=int, default=[92000, 156000, 204000, 240000, 276000],
+    parser.add_argument('--milestone', nargs='+', type=int, default=[9200, 15600, 20400, 20000, 27600],
                         help='when to change patch size and batch size')
     parser.add_argument('--workers', type=int, default=8, help='number of data loading workers')
     parser.add_argument('--seed', type=int, default=-1, help='random seed (-1 for no manual seed)')
