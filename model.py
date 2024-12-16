@@ -4,13 +4,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class RexLSTM(nn.Module):
-    def __init__(self, num_blocks=[4, 6, 6, 8], channels=[48, 96, 192, 384], num_refinement=4,
+    def __init__(self, num_blocks=[4, 6, 6, 8], channels=[48, 96, 192, 384], num_refinement=4, conv_type="causal1d",
                  expansion_factor=2.66):
         super(RexLSTM, self).__init__()
         
         self.embed_conv = nn.Conv2d(3, channels[0], kernel_size=3, padding=1, bias=False)
         self.encoders = nn.ModuleList([nn.Sequential(*[ViLBlockPair(
-                        dim=num_ch, conv_kind="causal1d", num_blocks=1) for _ in range(num_tb)]) 
+                        dim=num_ch, conv_kind=conv_type, num_blocks=1) for _ in range(num_tb)]) 
                                        for num_tb, num_ch in zip(num_blocks,  channels)])
         # the number of down sample or up sample == the number of encoder - 1
         self.downs = nn.ModuleList([DownSample(num_ch) for num_ch in channels[:-1]])
