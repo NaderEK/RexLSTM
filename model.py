@@ -8,11 +8,14 @@ class RexLSTM(nn.Module):
                  expansion_factor=2.66):
         super(RexLSTM, self).__init__()
         
-        self.embed_conv = nn.Conv2d(3, channels[0], kernel_size=3, padding=1, bias=False)
+        #self.embed_conv = nn.Conv2d(3, channels[0], kernel_size=3, padding=1, bias=False)
+        self.embed_conv = nn.Conv2d(3, channels[0], kernel_size=4, stride=4, bias=False,padding=1)
+        self.conv_transponse = nn.ConvTranspose2d(channels[1], channels[1], kernel_size=6, stride=4, bias=False,padding=1)
+        
         self.encoders = nn.ModuleList([nn.Sequential(*[ViLBlockPair(
                         dim=num_ch, conv_kind=conv_type, num_blocks=1) for _ in range(num_tb)]) 
                                        for num_tb, num_ch in zip(num_blocks,  channels)])
-        # the number of down sample or up sample == the number of encoder - 1
+        # the number of downsample or up sample == the number of encoder - 1
         self.downs = nn.ModuleList([DownSample(num_ch) for num_ch in channels[:-1]])
         self.ups = nn.ModuleList([UpSample(num_ch) for num_ch in list(reversed(channels))[:-1]])
          # the number of reduce block == the number of decoder - 1
@@ -41,5 +44,6 @@ class RexLSTM(nn.Module):
         out_dec2 = self.decoders[1](self.reduces[1](torch.cat([self.ups[1](out_dec3), out_enc2], dim=1)))
         fd = self.decoders[2](torch.cat([self.ups[2](out_dec2), out_enc1], dim=1))
         fr = self.refinement(fd)
+        fr = self.conv_transpose(fr)
         out = self.output(fr) + x
         return out
