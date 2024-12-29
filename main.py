@@ -59,7 +59,7 @@ if __name__ == '__main__':
     test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=args.workers)
 
     results, best_psnr, best_ssim = {'PSNR': [], 'SSIM': []}, 0.0, 0.0
-    model = RexLSTM(args.num_blocks, args.channels, args.num_refinement, conv_type="causal1d").cuda()
+    model = RexLSTM(conv_type="causal1d").cuda()
     if args.model_file:
         model.load_state_dict(torch.load(args.model_file))
         save_loop(model, test_loader, 1)
