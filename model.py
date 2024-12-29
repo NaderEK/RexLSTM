@@ -47,7 +47,7 @@ class RexLSTM(nn.Module):
 '''
 
 class RexLSTM(nn.Module):
-    def __init__(self, num_blocks=[4, 6, 6, 4], num_heads=[1, 2, 4, 8], channels=[48, 96, 192, 384], conv_type="causal1d"
+    def __init__(self, num_blocks=[4, 6, 6, 4], num_heads=[1, 2, 4, 8], channels=[48, 96, 192, 384], conv_type="causal1d",
                  num_refinement=4, expansion_factor=2.66):
         super(RexLSTM, self).__init__()
 
