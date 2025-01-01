@@ -7,7 +7,7 @@ import torch.nn.functional as F
 class RexLSTM2(nn.Module):
     def __init__(self, num_blocks=[4, 6, 6, 8], channels=[48, 96, 192, 384], num_refinement=4, conv_type="causal1d",
                  expansion_factor=2.66):
-        super(RexLSTM, self).__init__()
+        super(RexLSTM2, self).__init__()
         self.encoder = UNetEncoder()
         self.decoder = UNetDecoder()
         self.encoders = nn.ModuleList([nn.Sequential(*[ViLBlockPair(
