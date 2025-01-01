@@ -663,7 +663,75 @@ class ViLBlockPair(nn.Module):
         x = einops.rearrange(x, "b (h w) d -> b d h w", h=h, w=w)
         return x
 
+class UNetEncoder(nn.Module):
+  def __init__(self, in_channels=3):
+      super(UNetEncoder, self).__init__()
+      # Encoder
 
+      self.e11 = nn.Conv2d(in_channels, 16, kernel_size=3, padding=1) # output: 570x570x64
+      self.e12 = nn.Conv2d(16, 16, kernel_size=3, padding=1) # output: 568x568x64
+      self.pool1 = nn.Conv2d(16,16, kernel_size=4, stride=2, padding=1)
+
+      self.e21 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
+      self.e22 = nn.Conv2d(32, 32, kernel_size=3, padding=1)
+      self.pool2 = nn.Conv2d(32, 32, kernel_size=4, stride=2, padding=1)
+
+      self.e31 = nn.Conv2d(32, 48, kernel_size=3, padding=1)
+      self.e32 = nn.Conv2d(48, 48, kernel_size=3, padding=1)
+      self.pool3 = nn.Conv2d(48, 48, kernel_size=4, stride=2, padding=1)
+
+      self.e41 = nn.Conv2d(32, 48, kernel_size=3, padding=1)
+      self.e42 = nn.Conv2d(48, 48, kernel_size=3, padding=1)
+      self.pool4 = nn.Conv2d(48, 48, kernel_size=4, stride=2, padding=1)
+
+  def forward(self, x):
+      # Encoder
+      x = self.e11(x)
+      x = self.e12(x)
+      x = self.pool1(x)
+      x = self.e21(x)
+      x = self.e22(x)
+      x = self.pool2(x)
+      x = self.e31(x)
+      x = self.e32(x)
+      x = self.pool3(x)
+
+
+      return x
+
+class UNetDecoder(nn.Module):
+  def __init__(self, in_channels=3):
+      super(UNetDecoder, self).__init__()
+      self.d11 = nn.ConvTranspose2d(96, 64, kernel_size=4, stride=2, padding=1)
+      self.d12 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
+      self.d13 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
+
+      self.d21 = nn.ConvTranspose2d(64, 48, kernel_size=4, stride=2, padding=1)
+      self.d22 = nn.Conv2d(48, 48, kernel_size=3, padding=1)
+      self.d23 = nn.Conv2d(48, 48, kernel_size=3, padding=1)
+
+      self.d31 = nn.ConvTranspose2d(48, 3, kernel_size=4, stride=2, padding=1)
+      self.d32 = nn.Conv2d(3, 3, kernel_size=3, padding=1)
+      # self.d33 = nn.Conv2d(48, 48, kernel_size=3, padding=1)
+
+      # self.d41 = nn.ConvTranspose2d(48, 3, kernel_size=4, stride=2, padding=1)
+      # self.d42 = nn.Conv2d(3, 3, kernel_size=3, padding=1)
+
+
+  def forward(self, x):
+      x = self.d11(x)
+      x = self.d12(x)
+      x = self.d13(x)
+
+      x = self.d21(x)
+      x = self.d22(x)
+      x = self.d23(x)
+
+      x = self.d31(x)
+      x = self.d32(x)
+
+
+      return x
 class VisionLSTM2(nn.Module):
     def __init__(
             self,
