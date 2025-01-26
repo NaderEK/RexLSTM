@@ -33,7 +33,7 @@ def parse_args():
     parser.add_argument('--patch_size', nargs='+', type=int, default=[32, 40, 48, 64, 80, 96],
                         help='patch size of each image for progressive learning')
     parser.add_argument('--lr', type=float, default=0.0003, help='initial learning rate')
-    parser.add_argument('--milestone', nargs='+', type=int, default=[9200, 15600, 20400, 20000, 27600],
+    parser.add_argument('--milestone', nargs='+', type=int, default=[9200, 15600, 20400, 24000, 27600],
                         help='when to change patch size and batch size')
     parser.add_argument('--workers', type=int, default=8, help='number of data loading workers')
     parser.add_argument('--seed', type=int, default=-1, help='random seed (-1 for no manual seed)')
