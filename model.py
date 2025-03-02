@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class RexLST2M(nn.Module):
+class RexLSTM2(nn.Module):
     def __init__(self, num_blocks=[2, 3, 3, 4], channels=[48, 96, 192, 384], num_refinement=4, conv_type="causal1d",
                  expansion_factor=2.66):
         super(RexLSTM2, self).__init__()
