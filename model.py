@@ -1,4 +1,4 @@
-from vision_lstm.vision_lstm2 import *
+from vision_lstm.VisionLSTM import *
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -92,7 +92,16 @@ class RexLSTM(nn.Module):
     def __init__(self, num_blocks=[4, 6, 6, 4], num_heads=[1, 2, 4, 8], channels=[48, 96, 192, 384], conv_type="causal1d",
                  num_refinement=4, expansion_factor=2.66):
         super(RexLSTM, self).__init__()
-
+                     
+        directions = []
+        dpr = [0] * 12
+                     
+        for i in range(12):
+            if i % 2 == 0:
+                directions.append(SequenceTraversal.ROWWISE_FROM_TOP_LEFT)
+            else:
+                directions.append(SequenceTraversal.ROWWISE_FROM_BOT_RIGHT)
+        
         self.embed_conv = nn.Conv2d(3, channels[0], kernel_size=3, padding=1, bias=False)
 
         self.encoders = nn.ModuleList([nn.Sequential(*[TransformerBlock(
@@ -100,8 +109,13 @@ class RexLSTM(nn.Module):
                                        zip(num_blocks[:-1], num_heads[:-1], channels[:-1])])
         
         # using x-lstm block
-        self.encoders.append(nn.Sequential(*[ViLBlockPair(dim=channels[-1], conv_kind=conv_type, num_blocks=1)
-                                      for _ in range(num_blocks[-1])]))
+        self.encoders.append(nn.Sequential(*[ViLBlock(
+                    dim=channels[-1],
+                    drop_path=dpr[i],
+                    direction=directions[i],
+                )
+                for i in range(12)
+            ]))
         
         # the number of downsample or up sample == the number of encoder - 1
         self.downs = nn.ModuleList([DownSample(num_ch) for num_ch in channels[:-1]])
