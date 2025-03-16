@@ -62,17 +62,16 @@ class SequenceConv2d(nn.Conv2d):
         super().__init__(*args, **kwargs)
         self.seqlens = seqlens
 
-    def forward(self, x):
+    def forward(self, x, img_dims):
+        
         assert x.ndim == 3
         if self.seqlens is None:
             # assuming square input
-            h = math.sqrt(x.size(1))
-            assert h.is_integer()
-            h = int(h)
+            h, w = img_dims
         else:
             assert len(self.seqlens) == 2
             h = self.seqlens[0]
-        x = einops.rearrange(x, "b (h w) d -> b d h w", h=h)
+        x = einops.rearrange(x, "b (h w) d -> b d h w", h=h, w=w)
         x = super().forward(x)
         x = einops.rearrange(x, "b d h w -> b (h w) d")
         return x
