@@ -492,7 +492,7 @@ class ViLLayer(nn.Module):
         )
         self.reset_parameters()
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, img_dims) -> torch.Tensor:
         B, S, _ = x.shape
 
         # alternate direction in successive layers
@@ -508,7 +508,7 @@ class ViLLayer(nn.Module):
         x_mlstm, z = torch.chunk(x_inner, chunks=2, dim=-1)
 
         # mlstm branch
-        x_mlstm_conv = self.conv(x_mlstm)
+        x_mlstm_conv = self.conv(x_mlstm, img_dims)
         x_mlstm_conv_act = F.silu(x_mlstm_conv)
         q = self.q_proj(x_mlstm_conv_act)
         k = self.k_proj(x_mlstm_conv_act)
@@ -600,9 +600,9 @@ class ViLBlock(nn.Module):
 
         self.reset_parameters()
 
-    def _forward_path(self, x):
+    def _forward_path(self, x, img_dims):
         x = self.norm(x)
-        x = self.layer(x)
+        x = self.layer(x, img_dims)
         return x
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -655,11 +655,11 @@ class ViLBlockPair(nn.Module):
 
     def forward(self, x):
         h, w = x.shape[-2:]
-        h, w = x.shape[-2:]
+        img_dims = h, w
         x = einops.rearrange(x, "b c ... -> b ... c")
         x = einops.rearrange(x, "b ... d -> b (...) d")
-        x = self.rowwise_from_top_left(x)
-        x = self.rowwise_from_bot_right(x)
+        x = self.rowwise_from_top_left(x, img_dims)
+        x = self.rowwise_from_bot_right(x, img_dims)
         x = einops.rearrange(x, "b (h w) d -> b d h w", h=h, w=w)
         return x
 
