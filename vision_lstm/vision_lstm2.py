@@ -600,15 +600,15 @@ class ViLBlock(nn.Module):
 
         self.reset_parameters()
 
-    def _forward_path(self, x, img_dims):
+    def forward(self, x, img_dims):
         x = self.norm(x)
         x = self.layer(x, img_dims)
         return x
-
+    '''
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.drop_path(x, self._forward_path)
         return x
-
+    '''
     def reset_parameters(self):
         self.layer.reset_parameters()
         self.norm.reset_parameters()
