@@ -12,17 +12,17 @@ from tqdm import tqdm
 from model import RexLSTM
 from utils import parse_args, RainDataset, rgb_to_y, psnr, ssim
 
-
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 def test_loop(net, data_loader, num_iter):
     net.eval()
     total_psnr, total_ssim, count = 0.0, 0.0, 0
     with torch.no_grad():
         test_bar = tqdm(data_loader, initial=1, dynamic_ncols=True)
         for rain, norain, name, h, w in test_bar:
-            rain, norain = rain.cuda(), norain.cuda()
+            rain, norain = rain.to(device), norain.to(device)
             out = torch.clamp((torch.clamp(model(rain)[:, :, :h, :w], 0, 1).mul(255)), 0, 255).byte()
             norain = torch.clamp(norain[:, :, :h, :w].mul(255), 0, 255).byte()
-            # computer the metrics with Y channel and double precision
+            # compute the metrics with Y channel and double precision
             y, gt = rgb_to_y(out.double()), rgb_to_y(norain.double())
             current_psnr, current_ssim = psnr(y, gt), ssim(y, gt)
             total_psnr += current_psnr.item()
@@ -56,10 +56,14 @@ def save_loop(net, data_loader, num_iter):
 if __name__ == '__main__':
     args = parse_args()
     test_dataset = RainDataset(args.data_path, args.data_name, 'test')
-    test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=args.workers)
+    test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=args.workers, pin_memory = True)
 
     results, best_psnr, best_ssim = {'PSNR': [], 'SSIM': []}, 0.0, 0.0
-    model = RexLSTM(conv_type="causal1d").cuda()
+    
+    
+    model = RexLSTM(conv_type="2d")
+    model = torch.nn.DataParallel(model, device_ids=[0, 1])
+    model.to(device)
     if args.model_file:
         model.load_state_dict(torch.load(args.model_file))
         save_loop(model, test_loader, 1)
@@ -75,12 +79,12 @@ if __name__ == '__main__':
                 start_iter = args.milestone[i - 1] if i > 0 else 0
                 length = args.batch_size[i] * (end_iter - start_iter)
                 train_dataset = RainDataset(args.data_path, args.data_name, 'train', args.patch_size[i], length)
-                train_loader = iter(DataLoader(train_dataset, args.batch_size[i], True, num_workers=args.workers))
+                train_loader = iter(DataLoader(train_dataset, args.batch_size[i], True, num_workers=args.workers, pin_memory = True))
                 i += 1
             # train
             model.train()
             rain, norain, name, h, w = next(train_loader)
-            rain, norain = rain.cuda(), norain.cuda()
+            rain, norain = rain.to(device), norain.to(device)
             out = model(rain)
             loss = F.l1_loss(out, norain)
 
