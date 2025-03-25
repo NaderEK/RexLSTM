@@ -119,7 +119,7 @@ class RexLSTM(nn.Module):
                 for i in range(12)
             ]))
         '''
-         self.encoders.append(nn.Sequential(*[ViLBlockPair(dim=channels[-1], conv_kind=conv_type, num_blocks=1)
+        self.encoders.append(nn.Sequential(*[ViLBlockPair(dim=channels[-1], conv_kind=conv_type, num_blocks=1)
                                        for _ in range(num_blocks[-1])]))
         
         # the number of downsample or up sample == the number of encoder - 1
