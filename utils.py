@@ -27,13 +27,13 @@ def parse_args():
                         help='number of channels for each level')
     parser.add_argument('--expansion_factor', type=float, default=2.66, help='factor of channel expansion for GDFN')
     parser.add_argument('--num_refinement', type=int, default=4, help='number of channels for refinement stage')
-    parser.add_argument('--num_iter', type=int, default=35000, help='iterations of training')
-    parser.add_argument('--batch_size', nargs='+', type=int, default=[64, 40, 32, 16, 8, 8],
+    parser.add_argument('--num_iter', type=int, default=38000, help='iterations of training')
+    parser.add_argument('--batch_size', nargs='+', type=int, default=[32, 20, 16, 8, 4, 4],
                         help='batch size of loading images for progressive learning')
-    parser.add_argument('--patch_size', nargs='+', type=int, default=[32, 40, 48, 64, 80, 96],
+    parser.add_argument('--patch_size', nargs='+', type=int, default=[64, 80, 96, 128, 160, 192],
                         help='patch size of each image for progressive learning')
     parser.add_argument('--lr', type=float, default=0.0003, help='initial learning rate')
-    parser.add_argument('--milestone', nargs='+', type=int, default=[10700, 18200, 23800, 28000, 32200],
+    parser.add_argument('--milestone', nargs='+', type=int, default= [10700, 18200, 23800, 28000, 32200],
                         help='when to change patch size and batch size')
     parser.add_argument('--workers', type=int, default=8, help='number of data loading workers')
     parser.add_argument('--seed', type=int, default=-1, help='random seed (-1 for no manual seed)')
@@ -227,6 +227,8 @@ class CosineAnnealingRestartCyclicLR(_LRScheduler):
     def get_lr(self):
         idx = get_position_from_periods(self.last_epoch,
                                         self.cumulative_period)
+        if idx is None:
+            idx = -1
         current_weight = self.restart_weights[idx]
         nearest_restart = 0 if idx == 0 else self.cumulative_period[idx - 1]
         current_period = self.periods[idx]
