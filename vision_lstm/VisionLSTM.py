@@ -5,6 +5,7 @@ import einops
 from enum import Enum
 import math
 import torch.nn.functional as F
+from .utils import interpolate_sincos, to_ntuple, VitPatchEmbed, VitPosEmbed2d, DropPath, SequenceConv2d, DownSample, UpSample
 
 def interpolate_sincos(embed, seqlens, mode="bicubic"):
     assert embed.ndim - 2 == len(seqlens)

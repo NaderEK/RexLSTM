@@ -2,7 +2,7 @@ import argparse
 import glob
 import os
 import random
-
+import math
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -11,7 +11,7 @@ from PIL import Image
 from torch.backends import cudnn
 from torch.utils.data import Dataset
 from torchvision.transforms import RandomCrop
-
+from torch.optim.lr_scheduler import _LRScheduler
 
 def parse_args():
     desc = 'Pytorch Implementation of \'Restormer: Efficient Transformer for High-Resolution Image Restoration\''
@@ -27,13 +27,13 @@ def parse_args():
                         help='number of channels for each level')
     parser.add_argument('--expansion_factor', type=float, default=2.66, help='factor of channel expansion for GDFN')
     parser.add_argument('--num_refinement', type=int, default=4, help='number of channels for refinement stage')
-    parser.add_argument('--num_iter', type=int, default=30000, help='iterations of training')
+    parser.add_argument('--num_iter', type=int, default=35000, help='iterations of training')
     parser.add_argument('--batch_size', nargs='+', type=int, default=[64, 40, 32, 16, 8, 8],
                         help='batch size of loading images for progressive learning')
     parser.add_argument('--patch_size', nargs='+', type=int, default=[32, 40, 48, 64, 80, 96],
                         help='patch size of each image for progressive learning')
     parser.add_argument('--lr', type=float, default=0.0003, help='initial learning rate')
-    parser.add_argument('--milestone', nargs='+', type=int, default=[9200, 15600, 20400, 24000, 27600],
+    parser.add_argument('--milestone', nargs='+', type=int, default=[10700, 18200, 23800, 28000, 32200],
                         help='when to change patch size and batch size')
     parser.add_argument('--workers', type=int, default=8, help='number of data loading workers')
     parser.add_argument('--seed', type=int, default=-1, help='random seed (-1 for no manual seed)')
@@ -171,3 +171,70 @@ def ssim(x, y, kernel_size=11, kernel_sigma=1.5, data_range=255.0, k1=0.01, k2=0
     # structural similarity (SSIM)
     ss = (2.0 * mu_xy + c1) / (mu_xx + mu_yy + c1) * cs
     return ss.mean()
+
+def get_position_from_periods(iteration, cumulative_period):
+    """Get the position from a period list.
+
+    It will return the index of the right-closest number in the period list.
+    For example, the cumulative_period = [100, 200, 300, 400],
+    if iteration == 50, return 0;
+    if iteration == 210, return 2;
+    if iteration == 300, return 2.
+
+    Args:
+        iteration (int): Current iteration.
+        cumulative_period (list[int]): Cumulative period list.
+
+    Returns:
+        int: The position of the right-closest number in the period list.
+    """
+    for i, period in enumerate(cumulative_period):
+        if iteration <= period:
+            return i
+class CosineAnnealingRestartCyclicLR(_LRScheduler):
+    """ Cosine annealing with restarts learning rate scheme.
+    An example of config:
+    periods = [10, 10, 10, 10]
+    restart_weights = [1, 0.5, 0.5, 0.5]
+    eta_min=1e-7
+    It has four cycles, each has 10 iterations. At 10th, 20th, 30th, the
+    scheduler will restart with the weights in restart_weights.
+    Args:
+        optimizer (torch.nn.optimizer): Torch optimizer.
+        periods (list): Period for each cosine anneling cycle.
+        restart_weights (list): Restart weights at each restart iteration.
+            Default: [1].
+        eta_min (float): The mimimum lr. Default: 0.
+        last_epoch (int): Used in _LRScheduler. Default: -1.
+    """
+
+    def __init__(self,
+                 optimizer,
+                 periods,
+                 restart_weights=(1, ),
+                 eta_mins=(0, ),
+                 last_epoch=-1):
+        self.periods = periods
+        self.restart_weights = restart_weights
+        self.eta_mins = eta_mins
+        assert (len(self.periods) == len(self.restart_weights)
+                ), 'periods and restart_weights should have the same length.'
+        self.cumulative_period = [
+            sum(self.periods[0:i + 1]) for i in range(0, len(self.periods))
+        ]
+        super(CosineAnnealingRestartCyclicLR, self).__init__(optimizer, last_epoch)
+        
+    def get_lr(self):
+        idx = get_position_from_periods(self.last_epoch,
+                                        self.cumulative_period)
+        current_weight = self.restart_weights[idx]
+        nearest_restart = 0 if idx == 0 else self.cumulative_period[idx - 1]
+        current_period = self.periods[idx]
+        eta_min = self.eta_mins[idx]
+
+        return [
+            eta_min + current_weight * 0.5 * (base_lr - eta_min) *
+            (1 + math.cos(math.pi * (
+                (self.last_epoch - nearest_restart) / current_period)))
+            for base_lr in self.base_lrs
+        ]

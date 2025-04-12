@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from model import RexLSTM
-from utils import parse_args, RainDataset, rgb_to_y, psnr, ssim
+from utils import parse_args, RainDataset, rgb_to_y, psnr, ssim, CosineAnnealingRestartCyclicLR
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 def test_loop(net, data_loader, num_iter):
@@ -62,14 +62,15 @@ if __name__ == '__main__':
     
     
     model = RexLSTM(conv_type="2d")
-    model = torch.nn.DataParallel(model, device_ids=[0, 1])
+    # model = torch.nn.DataParallel(model, device_ids=[0, 1])
     model.to(device)
     if args.model_file:
         model.load_state_dict(torch.load(args.model_file))
         save_loop(model, test_loader, 1)
     else:
         optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
-        lr_scheduler = CosineAnnealingLR(optimizer, T_max=args.num_iter, eta_min=1e-6)
+        lr_scheduler = CosineAnnealingRestartCyclicLR(optimizer, periods = [10700, 23800], restart_weights=[1, 1], eta_mins= [args.lr,1e-6])
+        # lr_scheduler = CosineAnnealingLR(optimizer, T_max=args.num_iter, eta_min=1e-6)
         total_loss, total_num, results['Loss'], i = 0.0, 0, [], 0
         train_bar = tqdm(range(1, args.num_iter + 1), initial=1, dynamic_ncols=True)
         for n_iter in train_bar:
