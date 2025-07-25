@@ -17,7 +17,7 @@ def parse_args():
     desc = 'Pytorch Implementation of \'Restormer: Efficient Transformer for High-Resolution Image Restoration\''
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('--data_path', type=str, default='./')
-    parser.add_argument('--data_name', type=str, default='rain100L', choices=['rain100L', 'rain100H'])
+    parser.add_argument('--data_name', type=str, default='rain100L', choices=['rain100L', 'rain100H','Rain13K'])
     parser.add_argument('--save_path', type=str, default='result')
     parser.add_argument('--num_blocks', nargs='+', type=int, default=[4, 6, 6, 8],
                         help='number of transformer blocks for each level')
@@ -27,13 +27,13 @@ def parse_args():
                         help='number of channels for each level')
     parser.add_argument('--expansion_factor', type=float, default=2.66, help='factor of channel expansion for GDFN')
     parser.add_argument('--num_refinement', type=int, default=4, help='number of channels for refinement stage')
-    parser.add_argument('--num_iter', type=int, default=38000, help='iterations of training')
-    parser.add_argument('--batch_size', nargs='+', type=int, default=[32, 20, 16, 8, 4, 4],
+    parser.add_argument('--num_iter', type=int, default=320000, help='iterations of training')
+    parser.add_argument('--batch_size', nargs='+', type=int, default=[38,10, 6, 4, 2, 1],
                         help='batch size of loading images for progressive learning')
-    parser.add_argument('--patch_size', nargs='+', type=int, default=[64, 80, 96, 128, 160, 192],
+    parser.add_argument('--patch_size', nargs='+', type=int, default=[64,128, 160, 192, 256, 320],
                         help='patch size of each image for progressive learning')
     parser.add_argument('--lr', type=float, default=0.0003, help='initial learning rate')
-    parser.add_argument('--milestone', nargs='+', type=int, default= [10700, 18200, 23800, 28000, 32200],
+    parser.add_argument('--milestone', nargs='+', type=int, default= [48000, 156000, 204000, 240000, 276000],
                         help='when to change patch size and batch size')
     parser.add_argument('--workers', type=int, default=8, help='number of data loading workers')
     parser.add_argument('--seed', type=int, default=-1, help='random seed (-1 for no manual seed)')
@@ -90,8 +90,8 @@ class RainDataset(Dataset):
     def __init__(self, data_path, data_name, data_type, patch_size=None, length=None):
         super().__init__()
         self.data_name, self.data_type, self.patch_size = data_name, data_type, patch_size
-        self.rain_images = sorted(glob.glob('{}/{}/{}/rain/*.png'.format(data_path, data_name, data_type)))
-        self.norain_images = sorted(glob.glob('{}/{}/{}/norain/*.png'.format(data_path, data_name, data_type)))
+        self.rain_images = sorted(glob.glob('{}/{}/{}/input/*'.format(data_path, data_name, data_type)))
+        self.norain_images = sorted(glob.glob('{}/{}/{}/target/*'.format(data_path, data_name, data_type)))
         # make sure the length of training and testing different
         self.num = len(self.rain_images)
         self.sample_num = length if data_type == 'train' else self.num
